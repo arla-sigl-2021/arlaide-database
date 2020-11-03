@@ -1,0 +1,33 @@
+graph G {
+
+    /**
+     * Tables and attributes def
+     */
+	"users" [shape=diamond];
+	"help_requests" [shape=diamond];
+	"location" [shape=diamond];
+	"rewards" [shape=diamond];
+    "skills" [shape=diamond];
+
+	"can_work_in" [shape=diamond];
+	"create_request" [shape=diamond];
+    "applies_to" [shape=diamond]; 
+	"has_skills" [shape=diamond];
+    "has_reward" [shape=diamond];
+    
+    /**
+     *  Relations between tables
+     */
+    "users" -- "create_request";
+    "create_request" -- "help_requests";
+    "users" -- "applies_to";
+    "applies_to" -- "help_requests";
+    "help_requests" -- "has_reward";
+    "help_requests" -- "location";
+    "has_reward" --  "rewards";
+    "users" -- "can_work_in";
+    "can_work_in" -- "location";
+    "users" -- "has_skills";
+    "has_skills" -- "skills";
+    
+}
