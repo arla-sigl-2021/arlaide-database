@@ -1,0 +1,38 @@
+version: '3'
+
+services:
+  postgres:
+    image: postgres:13-alpine
+    container_name: postgres-13
+    networks:
+     - arlaide-postgres
+    volumes:
+     - 'postgres-data:/var/lib/postgresql/data'
+    environment:
+     - POSTGRES_PASSWORD=sigl2021
+     - POSTGRES_USER=sigl2021
+    ports:
+    - '5432:5432'
+  pgadmin4:
+    image: dpage/pgadmin4:4.27
+    container_name: pgadmin4
+    networks:
+     - arlaide-postgres
+    volumes:
+     - 'pgadmin-data:/var/lib/pgadmin'
+    environment:
+     - PGADMIN_DEFAULT_EMAIL=arla@sigl.fr
+     - PGADMIN_DEFAULT_PASSWORD=sigl2021
+    ports:
+     - '8040:80'
+
+networks:
+  arlaide-postgres:
+    external:
+      name: arlaide-postgres
+
+volumes: 
+    postgres-data:
+      external: true
+    pgadmin-data:
+      external: true
