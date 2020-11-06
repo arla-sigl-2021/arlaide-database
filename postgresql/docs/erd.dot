@@ -5,7 +5,7 @@ graph G {
      */
 	"users" [shape=diamond];
 	"help_requests" [shape=diamond];
-	"location" [shape=diamond];
+	"locations" [shape=diamond];
 	"rewards" [shape=diamond];
     "skills" [shape=diamond];
 
@@ -23,10 +23,10 @@ graph G {
     "users" -- "applies_to";
     "applies_to" -- "help_requests";
     "help_requests" -- "has_reward";
-    "help_requests" -- "location";
+    "help_requests" -- "locations";
     "has_reward" --  "rewards";
     "users" -- "can_work_in";
-    "can_work_in" -- "location";
+    "can_work_in" -- "locations";
     "users" -- "has_skills";
     "has_skills" -- "skills";
     

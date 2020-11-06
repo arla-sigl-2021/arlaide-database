@@ -1,4 +1,4 @@
-# Postgres (or PostgreSQL)
+# Postgres (or PostgreSQL) workshop
 
 [Postgres](https://www.postgresql.org) is an open source relationnal database managment system (RDBMS).
 
@@ -10,13 +10,13 @@ In this workshop, you will:
 - visualize this data using [pgAdmin](https://www.pgadmin.org)
 - query some data from the web API of the former workshop
 
-# Step 1: Run Postgres and pgadmin on your computer
+## Step 1: Run Postgres and pgadmin on your computer
 
 Postgres is your relationnal database where pgAdmin is a simple UI to help you manage your database (query, table creation etc...).
 
 Instead of installing directly Postgres and pgAdmin on your local machine, you will run those in containers.
 
-## docker-compose, docker network and docker volumes
+### docker-compose, docker network and docker volumes
 
 You will use another tool in the docker world: [docker-compose](https://docs.docker.com/compose/).
 
@@ -64,7 +64,7 @@ docker ps
 > - `docker volume rm pgadmin-data` to delete pgadmin data
 > - `docker network rm arlaide-postgres` to delete postgres's docker network
 
-## Connect to your database with pgAdmin
+### Connect to your database with pgAdmin
 
 You should be able to access PgAdmin on [locahost:8040](http://localhost:8040/)
 - usermail: arla@sigl.fr
@@ -85,9 +85,17 @@ Once logged in add the local PostgreSQL:
 4. You should see postgres schema and sigl2020 schema in the server dropdown:
 ![display-databases](docs/display-databases.png)
 
-# Step 2: Create Arlaide's database schema
+## Step 2: Create Arlaide's database schema
 
-Let's create Arlaide's database core schema, with the following specifications:
+First, let's create a database named `arlaide`, using pgAdmin:
+- right click on `Databases` under Server > local
+- select `Create`
+- just set the name to `arlaide` and some comment if you want.
+> Note: if you currious about how to do it in raw SQL, you can see real SQL code in the SQL tab
+- click `Save`
+![create-arlaide-database](./docs/create-arlaide-database.png)
+
+Then, let's create Arlaide's database core schema, with the following specifications:
 - A **user** has one or more **skills**.
 - A **skill** express what the a **user** is good at.
 - A **user** creates **help requests** at a given date and time.
@@ -99,3 +107,27 @@ Let's create Arlaide's database core schema, with the following specifications:
 
 Here is the corresponding entity-relation diagram (ERD), without table attributes:
 ![erd](docs/erd.svg)
+
+
+We've prepared a script to create those tables: [create-table.sql](./scripts/create-tables.sql).
+
+To run it, you need to send it to your docker container and run a `psql` command from there:
+```sh
+# First copy the `create-table.sql` script to your running postgres container
+docker cp ./scripts/create-tables.sql postgres-13:/tmp/create-tables.sql
+# create tables by running the create-table scripts over
+# your arlaide database
+docker exec -it postgres-13 psql -U sigl2021 -d arlaide -f /tmp/create-tables.sql
+```
+
+You should see your tables in pgAdmin, under:
+Server > local > databases > arlaide > Schemas > public > Tables
+
+Now we've created all tables, we need to add some data to it.
+
+## Step 3: Import data to your database
+
+
+## Step 4: Create some views on your data
+
+
