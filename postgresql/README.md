@@ -114,7 +114,7 @@ We've prepared a script to create those tables: [create-table.sql](./scripts/cre
 To run it, you need to send it to your docker container and run a `psql` command from there:
 ```sh
 # First copy the `create-table.sql` script to your running postgres container
-docker cp ./scripts/create-tables.sql postgres-13:/tmp/create-tables.sql
+docker cp ./scripts/create-tables.sql postgres-13:/tmp/
 # create tables by running the create-table scripts over
 # your arlaide database
 docker exec -it postgres-13 psql -U sigl2021 -d arlaide -f /tmp/create-tables.sql
@@ -126,6 +126,33 @@ Server > local > databases > arlaide > Schemas > public > Tables
 Now we've created all tables, we need to add some data to it.
 
 ## Step 3: Import data to your database
+
+You will use the [COPY](https://www.postgresql.org/docs/12/sql-copy.html) command of postgres to import some data that we provided to you.
+
+### Import users
+
+We copied an open dataset from the website [data.world](https://data.world), containing 70k+ usernames.
+
+To import it to your postgres database:
+1. copy the [usernames.csv](./scripts/usernames.csv) file to the running docker container
+2. import the csv file to your `arlaide` database:
+```sh
+# import csv using COPY command from the postgresql container
+docker exec -it postgres-13 psql -U sigl2021 -d arlaide -c "COPY users(username) FROM '/tmp/usernames.csv' DELIMITER ',' CSV HEADER;"
+```
+
+### Import locations
+
+
+
+### Import help requests
+
+You will use a dataset of 30 000 job offers in medical industry to simulate user's requests.
+
+> Note: Original dataset can be found here: https://data.world/promptcloud/30000-latest-job-postings-from-emedcareers-europe/workspace/file?filename=emed_careers_eu.csv
+
+
+
 
 
 ## Step 4: Create some views on your data

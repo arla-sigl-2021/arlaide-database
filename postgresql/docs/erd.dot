@@ -9,25 +9,23 @@ graph G {
 	"rewards" [shape=diamond];
     "skills" [shape=diamond];
 
-	"can_work_in" [shape=diamond];
-	"create_request" [shape=diamond];
-    "applies_to" [shape=diamond]; 
-	"has_skills" [shape=diamond];
-    "has_reward" [shape=diamond];
-    
+	"user_can_work_in" [shape=diamond];
+    "user_applies_to" [shape=diamond]; 
+	"user_has_skills" [shape=diamond];
+    "hr_has_rewards" [shape=diamond];
+
     /**
      *  Relations between tables
      */
-    "users" -- "create_request";
-    "create_request" -- "help_requests";
-    "users" -- "applies_to";
-    "applies_to" -- "help_requests";
-    "help_requests" -- "has_reward";
+    "users" -- "help_requests";
+    "users" -- "user_applies_to";
+    "user_applies_to" -- "help_requests";
+    "help_requests" -- "hr_has_rewards";
     "help_requests" -- "locations";
-    "has_reward" --  "rewards";
-    "users" -- "can_work_in";
-    "can_work_in" -- "locations";
-    "users" -- "has_skills";
-    "has_skills" -- "skills";
+    "hr_has_rewards" --  "rewards";
+    "users" -- "user_can_work_in";
+    "user_can_work_in" -- "locations";
+    "users" -- "user_has_skills";
+    "user_has_skills" -- "skills";
     
 }
