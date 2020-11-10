@@ -125,36 +125,47 @@ Server > local > databases > arlaide > Schemas > public > Tables
 
 Now we've created all tables, we need to add some data to it.
 
-## Step 3: Import data to your database
+## Step 3: Import test data to your database
 
-You will use the [COPY](https://www.postgresql.org/docs/12/sql-copy.html) command of postgres to import some data that we provided to you.
+You will use the [COPY](https://www.postgresql.org/docs/12/sql-copy.html) command of postgres to import some data that we provided you with.
 
-### Import users
+All test data lives under this `scripts/data` folder. We took some open dataset of:
+- 30k [job offers in australia on data.world](https://data.world/promptcloud/30000-job-postings-from-seek-australia/workspace/file?filename=seek_australia.csv)
+- 1000 [usernames on data.world](https://data.world/pmlandwehr/metafilter-infodump-20170312/workspace/file?filename=usernames.csv)
+- 20+ [skills from top 10 Linkedin's skill over years on data.world](https://data.world/dataremixed/linkedin-top-10-skills-by-year/workspace/file?filename=LinkedInTopSkills.xlsx)
 
-We copied an open dataset from the website [data.world](https://data.world), containing 70k+ usernames.
+With those 3 datasets, we generated CSV files for all of the tables.
 
 To import it to your postgres database:
-1. copy the [usernames.csv](./scripts/usernames.csv) file to the running docker container
+1. copy the content of the `scripts` folder inside your running postgresql container:
+```sh
+docker cp scripts postgres-13:/tmp/
+```
 2. import the csv file to your `arlaide` database:
 ```sh
-# import csv using COPY command from the postgresql container
-docker exec -it postgres-13 psql -U sigl2021 -d arlaide -c "COPY users(username) FROM '/tmp/usernames.csv' DELIMITER ',' CSV HEADER;"
+# execute the SQL script to import data from CSV files (see. scripts/load-data.sql)
+docker exec -it postgres-13 psql -U sigl2021 -d arlaide -f /tmp/scripts/load-data.sql
 ```
 
-### Import locations
-
-
-
-### Import help requests
-
-You will use a dataset of 30 000 job offers in medical industry to simulate user's requests.
-
-> Note: Original dataset can be found here: https://data.world/promptcloud/30000-latest-job-postings-from-emedcareers-europe/workspace/file?filename=emed_careers_eu.csv
-
-
-
-
+> Note: if you need to restart from fresh, you just need to type the following:
+> ```sh
+> # make sure you have scripts files
+> docker cp scripts postgres-13:/tmp/
+> # create tables (script will first drop tables then create them again)
+> docker exec -it postgres-13 psql -U sigl2021 -d arlaide -f /tmp/scripts/create-tables.sql
+> # load data from CSV files
+> docker exec -it postgres-13 psql -U sigl2021 -d arlaide -f /tmp/scripts/load-data.sql
+> ```
 
 ## Step 4: Create some views on your data
 
+Let's discover a bit the data you've imported.
+
+To do so, you can directly query some rows using pgAdmin's UI on http://localhost:8040 
+> Make sure to refresh tables from the UI after creating tables or loading data with scripts
+
+Assuming that you need to have some more specific information like:
+- Which help requests the user `honkzilla` has created ?
+- Which help requests the user `ross` has apply to?
+- What are the 10 most rewardable help request in dollars ?
 
