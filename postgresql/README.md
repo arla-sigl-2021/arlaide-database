@@ -77,12 +77,19 @@ For PostgreSQL instance running locally, credentials are:
 > Note: default credentials are in the docker-compose file
 
 Once logged in add the local PostgreSQL:
+
 1. Add server: right click on Servers > Add server
+
 2. Enter a connection name (e.g. local)
+
 ![create-server](docs/create-server.png)
+
 3. Add the postgres containers info (user, password are both sigl2021)
+
 ![create-server-connection](docs/create-connection.png)
+
 4. You should see postgres schema and sigl2020 schema in the server dropdown:
+
 ![display-databases](docs/display-databases.png)
 
 ## Step 2: Create Arlaide's database schema
@@ -103,7 +110,7 @@ Then, let's create Arlaide's database core schema, with the following specificat
 - A **help request** is associated to a single **location** .
 - A **user** can work in one or many **location**.
 - A **help request** has one or more **reward**.
-- A **reward** can be money in a specific currency and/or credibility points. The more credibility points a user has, better his chance of getting selected for a request.
+- A **reward** can be money in a specific currency and/or arlaide coins. The more arlaide coins  a user has, better his chance of getting selected for a request.
 
 Here is the corresponding entity-relation diagram (ERD), without table attributes:
 ![erd](docs/erd.svg)
@@ -157,15 +164,210 @@ docker exec -it postgres-13 psql -U sigl2021 -d arlaide -f /tmp/scripts/load-dat
 > docker exec -it postgres-13 psql -U sigl2021 -d arlaide -f /tmp/scripts/load-data.sql
 > ```
 
-## Step 4: Create some views on your data
+## Step 4: Create views on your data for your web API
 
-Let's discover a bit the data you've imported.
-
-To do so, you can directly query some rows using pgAdmin's UI on http://localhost:8040 
+To explore your data, you can directly query some rows using pgAdmin's UI on http://localhost:8040 
 > Make sure to refresh tables from the UI after creating tables or loading data with scripts
 
-Assuming that you need to have some more specific information like:
-- Which help requests the user `honkzilla` has created ?
-- Which help requests the user `ross` has apply to?
-- What are the 10 most rewardable help request in dollars ?
+Let's select all help_requests with their owners, with the following column names:
+- owner_id: user id of the owner of the help request
+- owner_username: the username of the owner of the help requests
+- help_request_id: the id of the help request
+- title: the help request title
+- details: the help request details
+- city: the city where help is needed
+- country: the country where help is needed
 
+Try out the following query from the query tool of pgAdmin:
+```sql
+ SELECT u.id AS owner_id,
+    u.username AS owner_username,
+    hr.id AS help_request_id,
+    hr.title,
+    hr.details,
+    l.city,
+    l.country
+   FROM users u,
+    help_requests hr,
+    locations l
+  WHERE (hr.user_id = u.id) AND (hr.location_id = l.id);
+```
+
+> Note: We could have use an INNER JOIN too. see: https://www.postgresql.org/docs/13/tutorial-join.html
+
+This example is rather simple, but imagine now you got more complex queries with more than one join.
+
+Now, you don't want to have to write those complicated queries in your web API code. 
+
+You can create a [view](https://www.postgresql.org/docs/9.2/sql-createview.html).
+
+
+From your pgAdmin UI, create a view from the "View" tab:
+- Name: user_help_requests
+- In the `Code` tab, just copy/paste the previous `SELECT` statement (without ending `;`)
+- Save your view
+
+Now you can directly query your view by typing:
+```sql
+SELECT * FROM help_requests_owners;
+```
+
+> Note: VIEW and MATERIALIZED VIEWS are differents. MATERIALIZED VIEWS is a PostgreSQL only feature where VIEW are default SQL views.
+> You can read more here: https://www.postgresql.org/docs/9.3/rules-materializedviews.html
+
+
+## Step 5: Consume your view from your web API
+
+From your API, you need to install a new node module to interact with Postgres: [node-postgres](https://node-postgres.com)
+
+To install it, like any other node modules, type:
+```sh
+# from your web api repository
+npm i --save pg
+# install typescripts types
+npm i --save-dev @types/pg
+```
+
+Now, you will replace the `FakeDB` in your web api by this `RDS`:
+https://github.com/arla-sigl-2021/web-api/blob/arlaide-database/template/src/db.ts 
+
+This new namespace will expose a `getHelpRequests` method that will query the view of Step 4 (on your localhost).
+
+Then, you just need to adapt your `/v1/help_requests` route to use `RDS.getHelpRequests(...)` instead of `FakeDB.getHelpRequest(...)`:
+```ts
+// From src/server.ts file
+app.get(
+  "/v1/help-request",
+  /* jwtCheck ,*/ // Remove the ser
+  async (request: express.Request, response: express.Response) => {
+    // Getting value of page and limit query options:
+    // ex: http://<domain>/v1/help-request?page=1&limit=10
+    //  page == 1
+    //  limit == 10
+    try {
+      const { page, limit } = extractPageOptions(request);
+
+      // Query the page of help requests from the fake database
+      const helpRequests: HelpRequest[] = await RDS.getHelpRequests(page, limit);
+
+      // sends the response back to the client, when node will be ready!
+      response.send(helpRequests);
+    } catch (e) {
+      // Something went wrong internally to the API,
+      // so we are returning a 500 HTTP status
+      response.statusCode = 500;
+      response.send({ error: e.message });
+    }
+  }
+);
+```
+> We  disable security on the /v1/help_request route to try out locally. This is not good for production!
+> You can see all changes on web-api template in this pull request:
+https://github.com/arla-sigl-2021/web-api/pull/1
+
+Try out and call your API from your browser: http://localhost:3000/v1/help-request?page=1&limit=5
+
+Once it works, you can put back the security check on your route:
+```ts
+// From src/server.ts file
+app.get(
+  "/v1/help-request",
+  jwtCheck,
+  async (request: express.Request, response: express.Response) => {
+  //...
+```
+
+## Step 6: Adapt your frontend
+
+The type of a help request has changed:
+```ts
+// Before
+export type HelpRequest = {
+    id: string;
+    username: string;
+    description: string;
+    location: string;
+}
+// Now
+export type HelpRequest = {
+    help_request_id: number;
+    owner_id: number;
+    owner_username: string;
+    title: string;
+    details: string;
+    city: string;
+    country: string;
+}
+```
+
+So you need to adapt the component that renders a help request to this new type.
+
+For instance, in the [group 11](https://github.com/ffauchille/arla-group-11), we use the [Table from material UI](https://material-ui.com/components/tables/).
+
+So the component which renders the table needs to move from:
+```tsx
+const HelpRequestTable: React.FC<HelpRequestTableProps> = ({
+  helpRequests,
+}) => {
+  return (
+    <TableContainer component={Paper}>
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableCell>Help request ID</TableCell>
+            <TableCell align="right">Location</TableCell>
+            <TableCell align="right">Description</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {helpRequests.map((hr, index) => (
+            <TableRow key={index}>
+              <TableCell component="th" scope="row">
+                {hr.id}
+              </TableCell>
+              <TableCell align="right">{hr.location}</TableCell>
+              <TableCell align="right">{hr.description}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
+};
+```
+to: 
+```tsx
+const HelpRequestTable: React.FC<HelpRequestTableProps> = ({
+  helpRequests,
+}) => {
+  return (
+    <TableContainer component={Paper}>
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableCell>From user</TableCell>
+            <TableCell align="right">Title</TableCell>
+            <TableCell align="right">Details</TableCell>
+            <TableCell align="right">City</TableCell>
+            <TableCell align="right">Country</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {helpRequests.map((hr, index) => (
+            <TableRow key={index}>
+              <TableCell component="th" scope="row">
+                {hr.owner_username}
+              </TableCell>
+              <TableCell align="right">{hr.title}</TableCell>
+              <TableCell align="right">{hr.details}</TableCell>
+              <TableCell align="right">{hr.city}</TableCell>
+              <TableCell align="right">{hr.country}</TableCell>
+              <>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
+};
+```
