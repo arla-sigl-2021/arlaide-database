@@ -177,9 +177,9 @@ export type Comment = {
 export namespace DocumentDB {
 
     const uri = "mongodb://sigl2021:sigl2021@localhost:27017?authSource=admin";
-    const client = new MongoClient(uri);
 
     const find = <T>(collectionName: string) => async (findQuery: FilterQuery<T>) => {
+        const client = new MongoClient(uri);
         try {
           await client.connect();
           const database = client.db('arlaide');
