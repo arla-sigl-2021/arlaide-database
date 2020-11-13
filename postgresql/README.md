@@ -228,17 +228,77 @@ npm i --save pg
 npm i --save-dev @types/pg
 ```
 
-Now, you will replace the `FakeDB` in your web api by this `RDS`:
-https://github.com/arla-sigl-2021/web-api/blob/arlaide-database/template/src/db.ts 
+Now you will add after the `FakeDB`, this `RDS` namespace:
+```ts
+export type UserHelpRequest = {
+    help_request_id: number;
+    owner_id: number;
+    owner_username: string;
+    title: string;
+    details: string;
+    city: string;
+    country: string;
+}
+
+/**
+ * Connects to your Postgres database.
+ * RDS stands for Relational Database System, which is a common designation
+ * for SQL database like Postgres.
+ */
+export namespace RDS {
+    // Create a pool of connection;
+    // to control number of concurrent connections.
+    // We leave default values for now.
+    const pool = new Pool({
+        host: "localhost",
+        port: 5432,
+        database: "arlaide",
+        user: "sigl2021",
+        password: "sigl2021"
+    });
+
+    // Handler method to perform any kind of query 
+    // to your database
+    const query = async <T>(sql: string): Promise<T[]> => {
+        let result: QueryResult<T>;
+        
+        // Get the next connection available in the pool
+        const client = await pool.connect()
+       
+        result = await client.query<T>(sql)
+        
+        // release the connection
+        client.release();
+        return result.rows;
+    }
+    
+    /**
+     * Get next 
+     * @param page page number of help requests we want to query
+     * @param limit the size of the page of help requests we want to query
+     */
+    export const getHelpRequests = async (page: number, limit: number) => {
+        const helpRequests: UserHelpRequest[] = await query<UserHelpRequest>(`
+            SELECT * FROM help_requests_owners
+            LIMIT ${limit} OFFSET ${page};
+        `)
+
+        return helpRequests;
+    }
+}
+```
 
 This new namespace will expose a `getHelpRequests` method that will query the view of Step 4 (on your localhost).
 
 Then, you just need to adapt your `/v1/help_requests` route to use `RDS.getHelpRequests(...)` instead of `FakeDB.getHelpRequest(...)`:
 ```ts
 // From src/server.ts file
+//...
+import { /*...*/, RDS, UserHelpRequest } from "./db";
+//...
 app.get(
   "/v1/help-request",
-  /* jwtCheck ,*/ // Remove the ser
+  /* jwtCheck ,*/ // Remove the security
   async (request: express.Request, response: express.Response) => {
     // Getting value of page and limit query options:
     // ex: http://<domain>/v1/help-request?page=1&limit=10
@@ -248,7 +308,7 @@ app.get(
       const { page, limit } = extractPageOptions(request);
 
       // Query the page of help requests from the fake database
-      const helpRequests: HelpRequest[] = await RDS.getHelpRequests(page, limit);
+      const helpRequests: UserHelpRequest[] = await RDS.getHelpRequests(page, limit);
 
       // sends the response back to the client, when node will be ready!
       response.send(helpRequests);
@@ -262,10 +322,10 @@ app.get(
 );
 ```
 > We  disable security on the /v1/help_request route to try out locally. This is not good for production!
-> You can see all changes on web-api template in this pull request:
-https://github.com/arla-sigl-2021/web-api/pull/1
 
 Try out and call your API from your browser: http://localhost:3000/v1/help-request?page=1&limit=5
+
+You should see 5 of help requests from your Postgres database.
 
 Once it works, you can put back the security check on your route:
 ```ts
@@ -289,7 +349,7 @@ export type HelpRequest = {
     location: string;
 }
 // Now
-export type HelpRequest = {
+export type UserHelpRequest = {
     help_request_id: number;
     owner_id: number;
     owner_username: string;
@@ -362,7 +422,6 @@ const HelpRequestTable: React.FC<HelpRequestTableProps> = ({
               <TableCell align="right">{hr.details}</TableCell>
               <TableCell align="right">{hr.city}</TableCell>
               <TableCell align="right">{hr.country}</TableCell>
-              <>
             </TableRow>
           ))}
         </TableBody>
