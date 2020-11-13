@@ -222,6 +222,8 @@ From your API, you need to install a new node module to interact with Postgres: 
 
 To install it, like any other node modules, type:
 ```sh
+# select correct version of node
+nvm use
 # from your web api repository
 npm i --save pg
 # install typescripts types
@@ -307,7 +309,7 @@ app.get(
     try {
       const { page, limit } = extractPageOptions(request);
 
-      // Query the page of help requests from the fake database
+      // Query the page of help requests from your real relational database
       const helpRequests: UserHelpRequest[] = await RDS.getHelpRequests(page, limit);
 
       // sends the response back to the client, when node will be ready!
@@ -322,6 +324,14 @@ app.get(
 );
 ```
 > We  disable security on the /v1/help_request route to try out locally. This is not good for production!
+
+Start your api:
+```sh
+# select correct version of node
+nvm use
+# consider using nvm use before to have correct version of node
+npm start
+```
 
 Try out and call your API from your browser: http://localhost:3000/v1/help-request?page=1&limit=5
 

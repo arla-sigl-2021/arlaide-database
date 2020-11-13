@@ -154,6 +154,8 @@ You will use `mongodb` node module. This is the official driver of MongoDB for N
 
 From your web API, install the MongoDB driver, like any other node modules:
 ```sh
+# use correct version of node
+nvm use
 # install mongodb
 npm i --save mongodb
 # install typescript types
@@ -239,6 +241,8 @@ Let's try it out!
 
 Start your web api on your local host:
 ```sh
+# use correct version of node
+nvm use
 # from your web-api folder
 npm start
 ```
@@ -247,7 +251,7 @@ And try to get all comments documents with the help request id `13241`: http://l
 
 You should see the comment from user with id `41`.
 
-If it's all set, just enable security to your route and go to the next optional step:
+If it's all set, just enable security to your route and go to the next step:
 ```ts
 // from src/server.ts
 // ...
@@ -260,7 +264,7 @@ app.get(
 )
 ```
 
-## Step 6: (Optional) Create a comment component on your UI
+## Step 6: Create a comment component on your UI
 
 You can create a React component to display comments of a specific help request.
 
