@@ -5,7 +5,7 @@ services:
     image: mongo:4.4.1
     container_name: mongo-4
     volumes:
-    - 'mongo-data:/data'
+    - 'mongo-data:/data/db'
     environment:
     - MONGO_INITDB_ROOT_USERNAME=sigl2021
     - MONGO_INITDB_ROOT_PASSWORD=sigl2021
