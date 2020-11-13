@@ -209,7 +209,7 @@ From your pgAdmin UI, create a view from the "View" tab:
 
 Now you can directly query your view by typing:
 ```sql
-SELECT * FROM help_requests_owners;
+SELECT * FROM user_help_requests;
 ```
 
 > Note: VIEW and MATERIALIZED VIEWS are differents. MATERIALIZED VIEWS is a PostgreSQL only feature where VIEW are default SQL views.
@@ -232,6 +232,8 @@ npm i --save-dev @types/pg
 
 Now you will add after the `FakeDB`, this `RDS` namespace:
 ```ts
+import {QueryResult, Pool} from 'pg';
+
 export type UserHelpRequest = {
     help_request_id: number;
     owner_id: number;
@@ -281,7 +283,7 @@ export namespace RDS {
      */
     export const getHelpRequests = async (page: number, limit: number) => {
         const helpRequests: UserHelpRequest[] = await query<UserHelpRequest>(`
-            SELECT * FROM help_requests_owners
+            SELECT * FROM user_help_requests
             LIMIT ${limit} OFFSET ${page};
         `)
 
