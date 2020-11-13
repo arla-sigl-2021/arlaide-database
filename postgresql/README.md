@@ -66,7 +66,7 @@ docker ps
 
 ### Connect to your database with pgAdmin
 
-You should be able to access PgAdmin on [locahost:8040](http://localhost:8040/)
+You should be able to access PgAdmin on [localhost:8040](http://localhost:8040/)
 - usermail: arla@sigl.fr
 - password: sigl2021
 
