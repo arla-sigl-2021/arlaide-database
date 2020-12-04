@@ -14,6 +14,8 @@ DROP TABLE IF EXISTS user_can_work_in CASCADE;
 DROP TABLE IF EXISTS user_applies_to CASCADE;
 DROP TABLE IF EXISTS user_has_skills CASCADE;
 DROP TABLE IF EXISTS hr_has_rewards CASCADE;
+DROP VIEW IF EXISTS help_requests_owners CASCADE;
+
 /**
  *
  * Create all tables with their attributes
@@ -74,3 +76,17 @@ CREATE TABLE hr_has_rewards (
     amount NUMERIC NOT NULL CHECK (amount > 0),
     PRIMARY KEY (help_request_id, reward_id)
 )
+
+CREATE VIEW help_requests_owners AS
+    SELECT u.id AS owner_id,
+        u.username AS owner_username,
+        hr.id AS help_request_id,
+        hr.title,
+        hr.details,
+        l.city,
+        l.country
+    FROM users u,
+        help_requests hr,
+        locations l
+    WHERE (hr.user_id = u.id) AND (hr.location_id = l.id);
+
